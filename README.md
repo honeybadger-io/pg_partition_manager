@@ -39,10 +39,10 @@ And a Ruby script like this:
 
 require "pg_partition_manager"
 
-PartitionManager::Time.process([
-    {parent_table: "public.events", period: "month", premake: 1, retain: 3},
-    {parent_table: "public.stats", period: "week", premake: 4, retain: 4},
-    {parent_table: "public.observations", period: "day", retain: 7},
+PgPartitionManager::Time.process([
+  {parent_table: "public.events", period: "month", premake: 1, retain: 3},
+  {parent_table: "public.stats", period: "week", premake: 4, retain: 4},
+  {parent_table: "public.observations", period: "day", retain: 7},
 ]
 ```
 
