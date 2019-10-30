@@ -43,7 +43,7 @@ PgPartitionManager::Time.process([
   {parent_table: "public.events", period: "month", premake: 1, retain: 3},
   {parent_table: "public.stats", period: "week", premake: 4, retain: 4},
   {parent_table: "public.observations", period: "day", retain: 7},
-]
+])
 ```
 
 If the cron job runs on Monday, September 30th, 2019, and you had created the `events`, `stats`, and `observations` tables in your public schema, the following tables would be created:
