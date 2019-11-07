@@ -93,7 +93,30 @@ class PgPartitionManagerTest < Minitest::Test
     db.verify
   end
 
+  def test_it_processes_on_a_passed_db
+    date = Date.new(2019, 11, 7)
+    select_query = "select nspname, relname from pg_class c inner join pg_namespace n on n.oid = "\
+      "c.relnamespace where nspname = 'public' and relname like 'events_p%' and relkind = 'r' and "\
+      "relname < 'events_p2019_05_01' order by 1, 2"
+
+    create_query = "create table if not exists public.events_p2019_11_01 partition of "\
+      "public.events for values from ('2019-11-01') to ('2019-12-01')"
+
+    Date.stub :today, date do
+      side_db.expect(:exec, [], [select_query])
+      side_db.expect(:exec, true, [create_query])
+      PgPartitionManager::Time.process([
+        {parent_table: "public.events", period: "month", premake: 0, db: side_db},
+      ])
+    end
+    side_db.verify
+  end
+
   def db
     @db ||= Minitest::Mock.new
+  end
+
+  def side_db
+    @sid_db ||= Minitest::Mock.new
   end
 end
