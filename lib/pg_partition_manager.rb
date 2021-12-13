@@ -78,10 +78,11 @@ module PgPartitionManager
       end
     end
 
-    # A convenience method for doing all the maintenance for a list of partitions
-    def self.process(partitions)
+    # A convenience method for doing all the maintenance for a list of partitions.
+    # opts are passed directly to the initialize method.
+    def self.process(partitions, **opts)
       partitions.each do |part|
-        pm = new(part)
+        pm = new(part, **opts)
         pm.drop_tables
         pm.create_tables
       end
