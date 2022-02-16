@@ -32,4 +32,5 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency "standard"
 
   spec.add_dependency "pg", "~> 1.0"
+  spec.add_dependency "ulid", "~> 1.3"
 end
