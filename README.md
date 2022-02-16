@@ -42,7 +42,7 @@ require "pg_partition_manager"
 PgPartitionManager::Time.process([
   {parent_table: "public.events", period: "month", premake: 1, retain: 3},
   {parent_table: "public.stats", period: "week", premake: 4, retain: 4},
-  {parent_table: "public.observations", period: "day", retain: 7},
+  {parent_table: "public.observations", period: "day", retain: 7, ulid: true},
 ])
 ```
 
@@ -59,7 +59,7 @@ If the cron job runs on Monday, September 30th, 2019, and you had created the `e
 * `public.observations_p2019_10_03`
 * `public.observations_p2019_10_04`
 
-The `premake` option specifies how many tables to create for dates after the current period, and the `retain` option specifies how many tables to keep for dates before the current period.
+The `premake` option specifies how many tables to create for dates after the current period, and the `retain` option specifies how many tables to keep for dates before the current period. You can additionally add the ulid flag if your database uses [ULID](https://github.com/rafaelsales/ulid)s for primary keys (see [Starr's article](https://www.honeybadger.io/blog/uuids-and-ulids/) for a good overview on "web-scale" ids).
 
 This gem uses the [pg gem][3] to connect to your database, and it assumes the DATABASE\_URL environment variable is populated with connection info. If this environment variable isn't defined, a connection to the server running on localhost will be attempted.
 

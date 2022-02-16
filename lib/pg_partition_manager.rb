@@ -1,6 +1,7 @@
 require "pg_partition_manager/version"
 require "date"
 require "pg"
+require "ulid"
 
 module PgPartitionManager
   class Error < StandardError; end
@@ -47,7 +48,17 @@ module PgPartitionManager
       # we make the number of desired future tables
       (0..(@partition[:premake] || 4)).map do |month|
         child_table = "#{schema}.#{table}_p#{start.to_s.tr("-", "_")}"
-        @db.exec("create table if not exists #{child_table} partition of #{schema}.#{table} for values from ('#{start}') to ('#{stop}')")
+
+        if @partition[:ulid] == true
+          # ULID is lexographic https://github.com/rafaelsales/ulid
+          # First 10 chars are timestamp, next 16 are random. Alphabet starts with 0 and ends with Z
+          pg_start = ULID.generate(start.to_time).first(10) + ("0" * 16) # pin to start
+          pg_stop = ULID.generate(stop.to_time - 1).first(10) + ("Z" * 16) # pin to end
+        else
+          pg_start = start
+          pg_stop = stop
+        end
+        @db.exec("create table if not exists #{child_table} partition of #{schema}.#{table} for values from ('#{pg_start}') to ('#{pg_stop}')")
         start = stop
         stop = period_end(start)
         child_table
