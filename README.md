@@ -42,7 +42,9 @@ require "pg_partition_manager"
 PgPartitionManager::Time.process([
   {parent_table: "public.events", period: "month", premake: 1, retain: 3},
   {parent_table: "public.stats", period: "week", premake: 4, retain: 4},
-  {parent_table: "public.observations", period: "day", retain: 7, ulid: true},
+  {parent_table: "public.observations", period: "day", retain: 7, ulid: true, cascade: true},
+  # self referencing comment table (parent_id) so we can have comments on other comments
+  {parent_table: "public.comments", period: "day", retain: 7, ulid: true, cascade: true, truncate: true},
 ])
 ```
 
@@ -59,7 +61,9 @@ If the cron job runs on Monday, September 30th, 2019, and you had created the `e
 * `public.observations_p2019_10_03`
 * `public.observations_p2019_10_04`
 
-The `premake` option specifies how many tables to create for dates after the current period, and the `retain` option specifies how many tables to keep for dates before the current period. You can additionally add the ulid flag if your database uses [ULID](https://github.com/rafaelsales/ulid)s for primary keys (see [Starr's article](https://www.honeybadger.io/blog/uuids-and-ulids/) for a good overview on "web-scale" ids).
+The `premake` option specifies how many tables to create for dates after the current period, and the `retain` option specifies how many tables to keep for dates before the current period. You can additionally add the ulid flag if your database uses [ULID](https://github.com/rafaelsales/ulid)s for primary keys (see [Starr's article](https://www.honeybadger.io/blog/uuids-and-ulids/) for a good overview on "web-scale" ids). 
+
+A couple of notes regarding the `cascade` and `truncate` flags. Use the `cascade` option if you have dependent views or foreign key contraints (see [details on the drop table command](https://www.postgresql.org/docs/current/sql-droptable.html)). Use the `truncate` if you have dependent tables that are not partitioned can afford a truncate table (cleans out any forign key dependent rows) before the drop (see [details on the pg truncate command](https://www.postgresql.org/docs/current/sql-truncate.html)). The `truncate` option might also be useful if you have self referencing tables (clean out dependent rows). If using `truncate` it must be used in conjucation with the `cascade` flag.
 
 This gem uses the [pg gem][3] to connect to your database, and it assumes the DATABASE\_URL environment variable is populated with connection info. If this environment variable isn't defined, a connection to the server running on localhost will be attempted.
 
