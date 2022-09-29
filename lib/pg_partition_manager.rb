@@ -32,7 +32,23 @@ module PgPartitionManager
       result = @db.exec("select nspname, relname from pg_class c inner join pg_namespace n on n.oid = c.relnamespace where nspname = '#{schema}' and relname like '#{table}_p%' and relkind = 'r' and relname < '#{table}_p#{table_suffix}' order by 1, 2")
       result.map do |row|
         child_table = "#{row["nspname"]}.#{row["relname"]}"
-        @db.exec("drop table if exists #{child_table}")
+
+        # set a default statement
+        statement = "drop table if exists #{child_table}"
+
+        # update the statement if they want the cascade or the truncate option
+        if @partition[:cascade] == true
+          statements = []
+          # If desired, drops all dependent ROWS. Likely if this table is being partitioned, so will its dependents. But there are cases of self referencing tables (think parent/child relationships).
+          # Leave this an option for the operator to decide. Schemas can get pretty unwieldy if you are holding data for a while.
+          statements << "truncate table #{child_table} cascade" if @partition[:truncate] == true
+          # Drops table with dropping other constraints (views, foreign keys, etc). Note the cascade on the drop table only removes the fk constraint, not rows. So if you are not partitioning
+          # dependent tables too, you can get orphaned rows (use the truncate option above to remove them), else make sure you are managing the dependent tables too.
+          statements << "drop table if exists #{child_table} cascade"
+          statement = statements.join("; ")
+        end
+
+        @db.exec(statement)
         child_table
       end
     end
