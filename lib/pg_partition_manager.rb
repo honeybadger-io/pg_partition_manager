@@ -34,7 +34,7 @@ module PgPartitionManager
         child_table = "#{row["nspname"]}.#{row["relname"]}"
 
         # set a default statement
-        statement = "drop table if exists #{child_table}"
+        statement = "drop table if exists \"#{child_table}\""
 
         # update the statement if they want the cascade or the truncate option
         if @partition[:cascade] == true
@@ -74,7 +74,7 @@ module PgPartitionManager
           pg_start = start
           pg_stop = stop
         end
-        @db.exec("create table if not exists #{child_table} partition of #{schema}.#{table} for values from ('#{pg_start}') to ('#{pg_stop}')")
+        @db.exec("create table if not exists \"#{child_table}\" partition of \"#{schema}.#{table}\" for values from ('#{pg_start}') to ('#{pg_stop}')")
         start = stop
         stop = period_end(start)
         child_table
