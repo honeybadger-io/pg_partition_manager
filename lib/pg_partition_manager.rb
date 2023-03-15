@@ -29,13 +29,7 @@ module PgPartitionManager
       schema, table = @partition[:parent_table].split(".")
       table_suffix = retention.to_s.tr("-", "_")
 
-      tbname_has_specials = contains_special_character?(table)
-      if tbname_has_specials
-        query = "select nspname, relname from pg_class c inner join pg_namespace n on n.oid = c.relnamespace where nspname = '#{schema}' and relname like \"#{table}_p%\" and relkind = 'r' and relname < \"#{table}_p#{table_suffix}\" order by 1, 2"
-      else
-        query = "select nspname, relname from pg_class c inner join pg_namespace n on n.oid = c.relnamespace where nspname = '#{schema}' and relname like '#{table}_p%' and relkind = 'r' and relname < '#{table}_p#{table_suffix}' order by 1, 2"
-      end
-
+      query = "select nspname, relname from pg_class c inner join pg_namespace n on n.oid = c.relnamespace where nspname = '#{schema}' and relname like '#{table}_p%' and relkind = 'r' and relname < '#{table}_p#{table_suffix}' order by 1, 2"
       result = @db.exec(query)
       result.map do |row|
         tbname_has_specials = contains_special_character?(row["relname"])
