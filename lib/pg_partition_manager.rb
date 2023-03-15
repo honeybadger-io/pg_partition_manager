@@ -31,10 +31,10 @@ module PgPartitionManager
 
       result = @db.exec("select nspname, relname from pg_class c inner join pg_namespace n on n.oid = c.relnamespace where nspname = '#{schema}' and relname like '#{table}_p%' and relkind = 'r' and relname < '#{table}_p#{table_suffix}' order by 1, 2")
       result.map do |row|
-        child_table = "#{row["nspname"]}.#{row["relname"]}"
+        child_table = "\"#{row["nspname"]}.#{row["relname"]}\""
 
         # set a default statement
-        statement = "drop table if exists \"#{child_table}\""
+        statement = "drop table if exists #{child_table}"
 
         # update the statement if they want the cascade or the truncate option
         if @partition[:cascade] == true
