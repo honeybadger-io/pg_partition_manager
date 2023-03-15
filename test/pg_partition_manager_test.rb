@@ -93,6 +93,31 @@ class PgPartitionManagerTest < Minitest::Test
     db.verify
   end
 
+  def test_it_creates_tables_with_special_characters
+    PG.stub :connect, db do
+      Date.stub :today, Date.new(2019, 10, 11) do
+        pm = PgPartitionManager::Time.new({parent_table: "public.events_8555b191-e0da-4869-a8a5-eba524a8e4ea", period: "day"})
+        (11..15).each do |d|
+          db.expect(:exec, true, ["create table if not exists \"public.events_8555b191-e0da-4869-a8a5-eba524a8e4ea_p2019_10_#{d}\" partition of \"public.events_8555b191-e0da-4869-a8a5-eba524a8e4ea\" for values from ('2019-10-#{d}') to ('2019-10-#{d + 1}')"])
+        end
+        pm.create_tables
+      end
+    end
+    db.verify
+  end
+
+  def test_it_drops_tables_with_special_characters
+    PG.stub :connect, db do
+      Date.stub :today, Date.new(2019, 10, 1) do
+        pm = PgPartitionManager::Time.new({parent_table: "public.events_8555b191-e0da-4869-a8a5-eba524a8e4ea", period: "month", retain: 2})
+        db.expect(:exec, [{"nspname" => "public", "relname" => 'events_8555b191-e0da-4869-a8a5-eba524a8e4ea_p2019_10_17' }], ["select nspname, relname from pg_class c inner join pg_namespace n on n.oid = c.relnamespace where nspname = 'public' and relname like 'events_8555b191-e0da-4869-a8a5-eba524a8e4ea_p%' and relkind = 'r' and relname < 'events_8555b191-e0da-4869-a8a5-eba524a8e4ea_p2019_08_01' order by 1, 2"])
+        db.expect(:exec, true, ["drop table if exists \"public.events_8555b191-e0da-4869-a8a5-eba524a8e4ea_p2019_10_17\""])
+        pm.drop_tables
+      end
+    end
+    db.verify
+  end
+
   def db
     @db ||= Minitest::Mock.new
   end

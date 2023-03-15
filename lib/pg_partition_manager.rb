@@ -29,9 +29,11 @@ module PgPartitionManager
       schema, table = @partition[:parent_table].split(".")
       table_suffix = retention.to_s.tr("-", "_")
 
-      result = @db.exec("select nspname, relname from pg_class c inner join pg_namespace n on n.oid = c.relnamespace where nspname = '#{schema}' and relname like '#{table}_p%' and relkind = 'r' and relname < '#{table}_p#{table_suffix}' order by 1, 2")
+      query = "select nspname, relname from pg_class c inner join pg_namespace n on n.oid = c.relnamespace where nspname = '#{schema}' and relname like '#{table}_p%' and relkind = 'r' and relname < '#{table}_p#{table_suffix}' order by 1, 2"
+      result = @db.exec(query)
       result.map do |row|
-        child_table = "#{row["nspname"]}.#{row["relname"]}"
+        tbname_has_specials = contains_special_character?(row["relname"])
+        child_table = tbname_has_specials ? "\"#{row["nspname"]}.#{row["relname"]}\"" : "#{row["nspname"]}.#{row["relname"]}"
 
         # set a default statement
         statement = "drop table if exists #{child_table}"
@@ -63,7 +65,14 @@ module PgPartitionManager
       # than 1 for the range, to be sure the current period gets a table *and*
       # we make the number of desired future tables
       (0..(@partition[:premake] || 4)).map do |month|
-        child_table = "#{schema}.#{table}_p#{start.to_s.tr("-", "_")}"
+        tbname_has_specials = contains_special_character?(table)
+        if tbname_has_specials
+          child_table = "\"#{schema}.#{table}_p#{start.to_s.tr("-", "_")}\""
+          partition_table = "\"#{schema}.#{table}\""
+        else
+          child_table = "#{schema}.#{table}_p#{start.to_s.tr("-", "_")}"
+          partition_table = "#{schema}.#{table}"
+        end
 
         if @partition[:ulid] == true
           # ULID is lexographic https://github.com/rafaelsales/ulid
@@ -74,7 +83,7 @@ module PgPartitionManager
           pg_start = start
           pg_stop = stop
         end
-        @db.exec("create table if not exists #{child_table} partition of #{schema}.#{table} for values from ('#{pg_start}') to ('#{pg_stop}')")
+        @db.exec("create table if not exists #{child_table} partition of #{partition_table} for values from ('#{pg_start}') to ('#{pg_stop}')")
         start = stop
         stop = period_end(start)
         child_table
@@ -113,6 +122,10 @@ module PgPartitionManager
         pm.drop_tables
         pm.create_tables
       end
+    end
+
+    def contains_special_character?(table_name)
+      table_name.match(/[-!@#$%^&*(),.?":{}|<>]/).present? ? true : false
     end
   end
 end
