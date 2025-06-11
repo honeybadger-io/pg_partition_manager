@@ -35,7 +35,7 @@ Imagine a cron job like this:
 And a Ruby script like this:
 
 ```ruby
-#!/usr/bin/env/ruby
+#!/usr/bin/env ruby
 
 require "pg_partition_manager"
 
@@ -63,7 +63,7 @@ If the cron job runs on Monday, September 30th, 2019, and you had created the `e
 
 The `premake` option specifies how many tables to create for dates after the current period, and the `retain` option specifies how many tables to keep for dates before the current period. You can additionally add the ulid flag if your database uses [ULID](https://github.com/rafaelsales/ulid)s for primary keys (see [Starr's article](https://www.honeybadger.io/blog/uuids-and-ulids/) for a good overview on "web-scale" ids). 
 
-A couple of notes regarding the `cascade` and `truncate` flags. Use the `cascade` option if you have dependent views or foreign key contraints (see [details on the drop table command](https://www.postgresql.org/docs/current/sql-droptable.html)). Use the `truncate` if you have dependent tables that are not partitioned can afford a truncate table (cleans out any forign key dependent rows) before the drop (see [details on the pg truncate command](https://www.postgresql.org/docs/current/sql-truncate.html)). The `truncate` option might also be useful if you have self referencing tables (clean out dependent rows). If using `truncate` it must be used in conjucation with the `cascade` flag.
+A couple of notes regarding the `cascade` and `truncate` flags. Use the `cascade` option if you have dependent views or foreign key constraints (see [details on the drop table command](https://www.postgresql.org/docs/current/sql-droptable.html)). Use the `truncate` if you have dependent tables that are not partitioned can afford a truncate table (cleans out any foreign key dependent rows) before the drop (see [details on the pg truncate command](https://www.postgresql.org/docs/current/sql-truncate.html)). The `truncate` option might also be useful if you have self referencing tables (clean out dependent rows). If using `truncate` it must be used in conjunction with the `cascade` flag.
 
 This gem uses the [pg gem][3] to connect to your database, and it assumes the DATABASE\_URL environment variable is populated with connection info. If this environment variable isn't defined, a connection to the server running on localhost will be attempted.
 
